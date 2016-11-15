@@ -11,7 +11,19 @@ const INPUT_MODE = 2, // 0: exponential, 1: linear, 2: dual-zone
       MAX_SPAWN_COOLDOWN = 120,
       SIMPLE_TARGET_COLOR = 0x0000FF;
       SIMPLE_TARGET_RADIUS = 30;
-      SIMPLE_TARGET_SPAWN_CHANCE = 1,
+      SIMPLE_TARGET_HP = 3;
+      SIMPLE_TARGET_SCORE = 3;
+      SIMPLE_TARGET_SPAWN_CHANCE = 0.35,
+      SMALL_TARGET_COLOR = 0xFFFF00;
+      SMALL_TARGET_RADIUS = 15;
+      SMALL_TARGET_HP = 2;
+      SMALL_TARGET_SCORE = 2;
+      SMALL_TARGET_SPAWN_CHANCE = 0.40,
+      SPLITTER_TARGET_COLOR = 0xFF0000;
+      SPLITTER_TARGET_RADIUS = 40;
+      SPLITTER_TARGET_HP = 5;
+      SPLITTER_TARGET_SCORE = 5;
+      SPLITTER_TARGET_SPAWN_CHANCE = 0.25,
       SCOREBAR_HEIGHT = 40;
 
 /* classes ============================================================================= */
@@ -122,11 +134,53 @@ class Target extends GameObject {
 
 class SimpleTarget extends Target {
   constructor(x,y,vx,vy,hp) {
-    super(SIMPLE_TARGET_COLOR,SIMPLE_TARGET_RADIUS,x,y,vx,vy,3);
+    super(SIMPLE_TARGET_COLOR,SIMPLE_TARGET_RADIUS,x,y,vx,vy,SIMPLE_TARGET_HP);
   }
   destroy() {
     if(this.hp <= 0)
-      score.setScore(score.score+3);
+      score.setScore(score.score + SIMPLE_TARGET_SCORE);
+    super.destroy();
+  }
+}
+
+class SmallTarget extends Target {
+  constructor(x,y,vx,vy) {
+    super(SMALL_TARGET_COLOR,SMALL_TARGET_RADIUS,x,y,vx,vy,SMALL_TARGET_HP);
+  }
+  destroy() {
+    if(this.hp <= 0)
+      score.setScore(score.score + SMALL_TARGET_SCORE);
+    super.destroy();
+  }
+}
+
+
+class SplitTarget extends Target {
+  constructor(x,y,vx,vy) {
+    super(SMALL_TARGET_COLOR,SPLITTER_TARGET_RADIUS/2,x,y,vx,vy,SMALL_TARGET_HP);
+  }
+  destroy() {
+    if(this.hp <= 0)
+      score.setScore(score.score + SMALL_TARGET_SCORE);
+    super.destroy();
+  }
+}
+
+class SplitterTarget extends Target {
+  constructor(x,y,vx,vy) {
+    super(SPLITTER_TARGET_COLOR,SPLITTER_TARGET_RADIUS,x,y,vx,vy,SPLITTER_TARGET_HP);
+  }
+  destroy() {
+    if(this.hp <= 0) {
+      score.setScore(score.score + SPLITTER_TARGET_SCORE);
+      let splitNumber = 3 + Math.round(Math.random()*3),
+          v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+      for(let i=0;i<splitNumber;i++) {
+        let angle = (Math.random() * 2 * Math.PI) + Math.atan2(this.vy,this.vx);
+        v = (Math.random() * 2) + v - 1;
+        targets.addChild(new SplitTarget(this.x,this.y,Math.cos(angle) * v,Math.sin(angle) * v));
+      }
+    }
     super.destroy();
   }
 }
@@ -239,9 +293,21 @@ function spawnRandomTargets() {
   if(targetTypeRoll <= SIMPLE_TARGET_SPAWN_CHANCE) {
     x += rx * (SIMPLE_TARGET_RADIUS - 1);
     y += ry * (SIMPLE_TARGET_RADIUS - 1);
-    let vx = Math.abs(Math.cos(Math.atan((dy-y)/(dx-x)))) * speed * Math.sign(dx-x),
-        vy = Math.abs(Math.sin(Math.atan((dy-y)/(dx-x)))) * speed * Math.sign(dy-y);
+    let vx = Math.cos(Math.atan2((dy-y),(dx-x))) * speed,
+        vy = Math.sin(Math.atan2((dy-y),(dx-x))) * speed;
     targets.addChild(new SimpleTarget(x,y,vx,vy));
+  } else if ( (targetTypeRoll -= SIMPLE_TARGET_SPAWN_CHANCE) <= SMALL_TARGET_SPAWN_CHANCE) {
+    x += rx * (SMALL_TARGET_RADIUS - 1);
+    y += ry * (SMALL_TARGET_RADIUS - 1);
+    let vx = Math.cos(Math.atan2((dy-y),(dx-x))) * speed,
+        vy = Math.sin(Math.atan2((dy-y),(dx-x))) * speed;
+    targets.addChild(new SmallTarget(x,y,vx,vy));
+  } else if ( (targetTypeRoll -= SMALL_TARGET_SPAWN_CHANCE) <= SPLITTER_TARGET_SPAWN_CHANCE) {
+    x += rx * (SPLITTER_TARGET_RADIUS - 1);
+    y += ry * (SPLITTER_TARGET_RADIUS - 1);
+    let vx = Math.cos(Math.atan2((dy-y),(dx-x))) * speed,
+        vy = Math.sin(Math.atan2((dy-y),(dx-x))) * speed;
+    targets.addChild(new SplitterTarget(x,y,vx,vy));
   }
 }
 
