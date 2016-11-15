@@ -24,7 +24,7 @@ const INPUT_MODE = 2, // 0: exponential, 1: linear, 2: dual-zone
       SPLITTER_TARGET_HP = 5,
       SPLITTER_TARGET_SCORE = 5,
       SPLITTER_TARGET_SPAWN_CHANCE = 0.25,
-      TIME_LIMIT = Number.POSITIVE_INFINITY,
+      TIME_LIMIT = 180,
       SCOREBAR_HEIGHT = 40;
 
 /* classes ============================================================================= */
@@ -258,7 +258,41 @@ var init = new Promise((resolve,reject) => {
   resolve();
 });
 
-var setup = new Promise((resolve,reject) => {
+var setup = new Promise(setupObjects);
+
+init.then(setup).then(mainLoop);
+
+function mainLoop() {
+  requestAnimationFrame(mainLoop);
+  state();
+  renderer.render(stage);
+}
+
+function play() {
+  if(gameTimer < 0) {
+    console.log('Game over!\nYour score is ' + score.score);
+    alert('Game over!\nYour score is ' + score.score);
+    stage.removeChildren();
+    setupObjects();
+    return;
+  } else {
+    if(gameTimer % 60 == 0)
+      time.setTime(gameTimer/60);
+    gameTimer--;
+  }
+  if(targetSpawnTimer <= 0) {
+    spawnRandomTargets();
+    targetSpawnTimer = MIN_SPAWN_COOLDOWN + Math.random() * (MAX_SPAWN_COOLDOWN - MIN_SPAWN_COOLDOWN);
+  } else {
+    targetSpawnTimer--;
+  }
+  reticle.updateState(input.x,input.y);
+  targets.children.forEach( target => target.updateState() );
+  animations.children.forEach( animation => animation.updateState() );
+}
+
+/* utilities =========================================================================== */
+function setupObjects(resolve,reject) {
   targets = new GameObjectContainer();
   stage.addChild(targets);
 
@@ -280,38 +314,11 @@ var setup = new Promise((resolve,reject) => {
   state = play;
   gameTimer = TIME_LIMIT * 60;
   targetSpawnTimer = MIN_SPAWN_COOLDOWN + Math.random() * (MAX_SPAWN_COOLDOWN - MIN_SPAWN_COOLDOWN);
-  resolve();
-});
 
-function mainLoop() {
-  requestAnimationFrame(mainLoop);
-  state();
-  renderer.render(stage);
+  if(resolve)
+    resolve();
 }
 
-function play() {
-  if(gameTimer <= 0) {
-    time.setTime(0);
-    // game over
-  } else {
-    if(gameTimer % 60 == 0)
-      time.setTime(gameTimer/60);
-    gameTimer--;
-  }
-  if(targetSpawnTimer <= 0) {
-    spawnRandomTargets();
-    targetSpawnTimer = MIN_SPAWN_COOLDOWN + Math.random() * (MAX_SPAWN_COOLDOWN - MIN_SPAWN_COOLDOWN);
-  } else {
-    targetSpawnTimer--;
-  }
-  reticle.updateState(input.x,input.y);
-  targets.children.forEach( target => target.updateState() );
-  animations.children.forEach( animation => animation.updateState() );
-}
-
-init.then(setup).then(mainLoop);
-
-/* utilities =========================================================================== */
 function spawnRandomTargets() {
   let targetTypeRoll = Math.random(),
       playableHeight = viewportHeight - SCOREBAR_HEIGHT,
