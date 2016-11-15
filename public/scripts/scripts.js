@@ -6,7 +6,7 @@ const INPUT_MODE = 2, // 0: exponential, 1: linear, 2: dual-zone
       RETICLE_COLOR = 0xB1EAD0,
       RETICLE_RADIUS = 20,
       SHOOT_COOLDOWN = 15,
-      SHOOT_SOUND_EFFECT_VOLUME = 0.2,
+      SHOOT_SOUND_EFFECT_VOLUME = 0.1,
       MAX_TARGET_SPEED = 12,
       MIN_SPAWN_COOLDOWN = 60,
       MAX_SPAWN_COOLDOWN = 120,
@@ -239,6 +239,17 @@ class Score extends PIXI.Text {
   }
 }
 
+class PauseText extends PIXI.Text {
+  constructor() {
+    super('PAUSE',{font: '30px Tahoma, sans-serif', fill: 'white', fontWeight: 'bold'})
+    this.anchor.set(0.5);
+    this.adjustToViewport();
+  }
+  adjustToViewport() {
+    this.position.set(viewportWidth/2,viewportHeight/2);
+  }
+}
+
 /* variables =========================================================================== */
 var viewportWidth = getViewportWidth(),
     viewportHeight = getViewportHeight(),
@@ -246,9 +257,10 @@ var viewportWidth = getViewportWidth(),
     stage = new GameObjectContainer(),
     shootAnimationFrames = getShootAnimationFrames(),
     shootSoundEffect = new Audio('sounds/shoot.wav'),
+    keyPressed = {},
     state, gameTimer, targetSpawnTimer,
     targets, animations,
-    reticle, scorebar, time, gun, score;
+    reticle, scorebar, time, gun, score, pauseText;
 
 /* render ============================================================================== */
 var init = new Promise((resolve,reject) => {
@@ -258,6 +270,8 @@ var init = new Promise((resolve,reject) => {
   renderer.view.style.display = 'block';
   renderer.autoResize = true;
   window.addEventListener('resize',adjustObjectsToViewport);
+  window.addEventListener('keydown',keydownHandler);
+  window.addEventListener('keyup',keyupHandler);
   resolve();
 });
 
@@ -296,6 +310,10 @@ function play() {
   animations.children.forEach( animation => animation.updateState() );
 }
 
+function pause() {
+  reticle.updateState(input.x,input.y);
+}
+
 /* utilities =========================================================================== */
 function setupObjects(resolve,reject) {
   targets = new GameObjectContainer();
@@ -304,7 +322,7 @@ function setupObjects(resolve,reject) {
   animations = new GameObjectContainer();
   stage.addChild(animations);
 
-  reticle = new Reticle(RETICLE_COLOR,RETICLE_RADIUS,viewportWidth/2,viewportHeight/2 - SCOREBAR_HEIGHT/2);
+  reticle = new Reticle(RETICLE_COLOR,RETICLE_RADIUS,viewportWidth/2,SCOREBAR_HEIGHT + (viewportHeight - SCOREBAR_HEIGHT)/2);
   stage.addChild(reticle);
 
   scorebar = new Scorebar();
@@ -385,6 +403,26 @@ function adjustObjectsToViewport() {
   viewportHeight = getViewportHeight();
   stage.adjustToViewport(oldViewportWidth,oldViewportHeight);
   renderer.resize(viewportWidth,viewportHeight);
+}
+
+function keydownHandler(e) {
+  if(keyPressed[e.key])
+    return;
+  keyPressed[e.key] = true;
+  if(e.key == 'Enter') {
+    if(state == play) {
+      pauseText = new PauseText();
+      stage.addChild(pauseText);
+      state = pause;
+    } else if(state == pause) {
+      pauseText.destroy();
+      state = play;
+    }
+  }
+}
+
+function keyupHandler(e) {
+  delete keyPressed[e.key];
 }
 
 function isOutOfBound(object,container) {

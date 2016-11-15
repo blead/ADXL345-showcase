@@ -51,7 +51,7 @@ app.use('/view',(req,res,next) => {
 });
 
 app.use('/scoreboard',(req,res,next) => {
-  var responseString = '<h1>scoreboard</h1><br>\n';
+  var responseString = '<h1>scoreboard</h1>\n';
   if(highscores.length == 0) {
     responseString += '<p>no score recorded</p>';
   } else {
