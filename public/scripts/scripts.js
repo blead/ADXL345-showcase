@@ -9,21 +9,22 @@ const INPUT_MODE = 2, // 0: exponential, 1: linear, 2: dual-zone
       MAX_TARGET_SPEED = 12,
       MIN_SPAWN_COOLDOWN = 60,
       MAX_SPAWN_COOLDOWN = 120,
-      SIMPLE_TARGET_COLOR = 0x0000FF;
-      SIMPLE_TARGET_RADIUS = 30;
-      SIMPLE_TARGET_HP = 3;
-      SIMPLE_TARGET_SCORE = 3;
+      SIMPLE_TARGET_COLOR = 0x0000FF,
+      SIMPLE_TARGET_RADIUS = 30,
+      SIMPLE_TARGET_HP = 3,
+      SIMPLE_TARGET_SCORE = 3,
       SIMPLE_TARGET_SPAWN_CHANCE = 0.35,
-      SMALL_TARGET_COLOR = 0xFFFF00;
-      SMALL_TARGET_RADIUS = 15;
-      SMALL_TARGET_HP = 2;
-      SMALL_TARGET_SCORE = 2;
+      SMALL_TARGET_COLOR = 0xFFFF00,
+      SMALL_TARGET_RADIUS = 15,
+      SMALL_TARGET_HP = 2,
+      SMALL_TARGET_SCORE = 2,
       SMALL_TARGET_SPAWN_CHANCE = 0.40,
-      SPLITTER_TARGET_COLOR = 0xFF0000;
-      SPLITTER_TARGET_RADIUS = 40;
-      SPLITTER_TARGET_HP = 5;
-      SPLITTER_TARGET_SCORE = 5;
+      SPLITTER_TARGET_COLOR = 0xFF0000,
+      SPLITTER_TARGET_RADIUS = 40,
+      SPLITTER_TARGET_HP = 5,
+      SPLITTER_TARGET_SCORE = 5,
       SPLITTER_TARGET_SPAWN_CHANCE = 0.25,
+      TIME_LIMIT = Number.POSITIVE_INFINITY,
       SCOREBAR_HEIGHT = 40;
 
 /* classes ============================================================================= */
@@ -195,18 +196,44 @@ class Scorebar extends PIXI.Graphics {
   }
 }
 
-class Score extends PIXI.Text {
-  constructor() {
-    super('SCORE : 0',{font: '30px sans-serif', fill: 'white', fontWeight: 'bold'});
+class Time extends PIXI.Text {
+  constructor(time) {
+    super('TIME : ' + time,{font: '30px Tahoma, sans-serif', fill: 'white', fontWeight: 'bold'});
     this.adjustToViewport();
-    this.score = 0;
+    this.time = time;
+  }
+  setTime(time) {
+    this.time = time;
+    this.text = 'TIME : ' + time;
+  }
+  adjustToViewport() {
+    this.position.set(6,(SCOREBAR_HEIGHT - this.height) * 0.75);
+  }
+}
+
+class Gun extends PIXI.Sprite {
+  constructor() {
+    super(PIXI.Texture.fromImage('images/gun_inf.png'));
+    this.anchor.set(0.5);
+    this.adjustToViewport();
+  }
+  adjustToViewport() {
+    this.position.set(0.5 * viewportWidth,(SCOREBAR_HEIGHT)/2);
+  }
+}
+
+class Score extends PIXI.Text {
+  constructor(score) {
+    super('SCORE : ' + score,{font: '30px Tahoma, sans-serif', fill: 'white', fontWeight: 'bold'});
+    this.adjustToViewport();
+    this.score = score;
   }
   setScore(score) {
     this.score = score;
     this.text = 'SCORE : ' + score;
   }
   adjustToViewport() {
-    this.position.set(0.6 * viewportWidth,(SCOREBAR_HEIGHT - this.height) * 0.75);
+    this.position.set(0.55 * viewportWidth,(SCOREBAR_HEIGHT - this.height) * 0.75);
   }
 }
 
@@ -216,9 +243,9 @@ var viewportWidth = getViewportWidth(),
     renderer = PIXI.autoDetectRenderer(viewportWidth,viewportHeight,{transparent: true}),
     stage = new GameObjectContainer(),
     shootAnimationFrames = getShootAnimationFrames(),
-    state, targetSpawnTimer,
+    state, gameTimer, targetSpawnTimer,
     targets, animations,
-    scorebar, score, reticle;
+    reticle, scorebar, time, gun, score;
 
 /* render ============================================================================== */
 var init = new Promise((resolve,reject) => {
@@ -243,10 +270,15 @@ var setup = new Promise((resolve,reject) => {
 
   scorebar = new Scorebar();
   stage.addChild(scorebar);
-  score = new Score();
+  time = new Time(TIME_LIMIT);
+  stage.addChild(time);
+  gun = new Gun();
+  stage.addChild(gun);
+  score = new Score(0);
   stage.addChild(score);
 
   state = play;
+  gameTimer = TIME_LIMIT * 60;
   targetSpawnTimer = MIN_SPAWN_COOLDOWN + Math.random() * (MAX_SPAWN_COOLDOWN - MIN_SPAWN_COOLDOWN);
   resolve();
 });
@@ -258,6 +290,14 @@ function mainLoop() {
 }
 
 function play() {
+  if(gameTimer <= 0) {
+    time.setTime(0);
+    // game over
+  } else {
+    if(gameTimer % 60 == 0)
+      time.setTime(gameTimer/60);
+    gameTimer--;
+  }
   if(targetSpawnTimer <= 0) {
     spawnRandomTargets();
     targetSpawnTimer = MIN_SPAWN_COOLDOWN + Math.random() * (MAX_SPAWN_COOLDOWN - MIN_SPAWN_COOLDOWN);
