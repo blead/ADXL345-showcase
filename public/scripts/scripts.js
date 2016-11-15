@@ -176,8 +176,8 @@ class SplitterTarget extends Target {
       let splitNumber = 3 + Math.round(Math.random()*3),
           v = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
       for(let i=0;i<splitNumber;i++) {
-        let angle = (Math.random() * 2 * Math.PI) + Math.atan2(this.vy,this.vx);
-        v = (Math.random() * 2) + v - 1;
+        let angle = (Math.random() * 2 * Math.PI) + Math.atan2(this.vy,this.vx),
+            splitv = (Math.random() * 0.05 + 0.97) * v;
         targets.addChild(new SplitTarget(this.x,this.y,Math.cos(angle) * v,Math.sin(angle) * v));
       }
     }
