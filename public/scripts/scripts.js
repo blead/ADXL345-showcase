@@ -270,8 +270,10 @@ function mainLoop() {
 
 function play() {
   if(gameTimer < 0) {
-    console.log('Game over!\nYour score is ' + score.score);
-    alert('Game over!\nYour score is ' + score.score);
+    console.log('Game over! Your score is ' + score.score + '.');
+    let name = prompt('Game over!\nYour score is ' + score.score + '.\nPlease enter your name: ');
+    if(name)
+      socket.emit('score',{name: name, score: score.score});
     stage.removeChildren();
     setupObjects();
     return;

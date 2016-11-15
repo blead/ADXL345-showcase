@@ -1,14 +1,17 @@
 const express = require('express');
 var io = require('socket.io');
 
-const PORT = 80;
-const LOG_API = false;
-const LOG_VIEW = true;
-const LOG_CLEAR = true;
-const LOG_404 = true;
+const PORT = 80,
+      LOG_API = false,
+      LOG_SCORE = true,
+      LOG_VIEW = true,
+      LOG_SCOREBOARD = true,
+      LOG_CLEAR = true,
+      LOG_404 = true;
 
 var app = express();
 var data = [];
+var highscores = [];
 
 var server = app.listen(PORT,() => {
   console.log('server started, listening on port ' + PORT);
@@ -47,8 +50,24 @@ app.use('/view',(req,res,next) => {
     console.log('/view:\t\t(interval = ' + req.query.interval + ') ' + dataCount + ' output line(s)');
 });
 
+app.use('/scoreboard',(req,res,next) => {
+  var responseString = '<h1>scoreboard</h1><br>\n';
+  if(highscores.length == 0) {
+    responseString += '<p>no score recorded</p>';
+  } else {
+    responseString += '<ol>\n';
+    for(let i=0;i<highscores.length;i++)
+      responseString += '<li>' + highscores[i].name + ' : ' + highscores[i].score + '</li>\n';
+    responseString += '</ol>';
+  }
+  res.end(responseString);
+  if(LOG_SCOREBOARD)
+    console.log('/scoreboard:\t\t' + highscores.length + ' output line(s)');
+});
+
 app.use('/clear',(req,res,next) => {
   data = [];
+  scoreboard = [];
   res.end('data cleared');
   if(LOG_CLEAR)
     console.log('/clear:\t\tdata cleared');
@@ -64,4 +83,15 @@ app.use((req,res,next) => {
 
 io.on('connection',(socket) => {
   socket.emit('log',{type: 'info', message: 'connection successful'});
+
+  socket.on('score',(data) => {
+    if(LOG_SCORE)
+      console.log(data);
+    highscores.push(data);
+    highscores.sort( (a,b) => {
+      if(a.score > b.score) return -1;
+      else if(a.score == b.score) return 0;
+      else return 1;
+    });
+  });
 });
