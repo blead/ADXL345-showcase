@@ -6,6 +6,7 @@ const INPUT_MODE = 2, // 0: exponential, 1: linear, 2: dual-zone
       RETICLE_COLOR = 0xB1EAD0,
       RETICLE_RADIUS = 20,
       SHOOT_COOLDOWN = 15,
+      SHOOT_SOUND_EFFECT_VOLUME = 0.2,
       MAX_TARGET_SPEED = 12,
       MIN_SPAWN_COOLDOWN = 60,
       MAX_SPAWN_COOLDOWN = 120,
@@ -112,6 +113,7 @@ class Target extends GameObject {
       if(reticle.cooldown == 0) {
         this.hp -= reticle.power;
         reticle.cooldown = SHOOT_COOLDOWN;
+        getShootSoundEffect().play();
         animations.addChild(new ShootAnimation(reticle.x,reticle.y));
       }
     } else {
@@ -243,6 +245,7 @@ var viewportWidth = getViewportWidth(),
     renderer = PIXI.autoDetectRenderer(viewportWidth,viewportHeight,{transparent: true}),
     stage = new GameObjectContainer(),
     shootAnimationFrames = getShootAnimationFrames(),
+    shootSoundEffect = new Audio('sounds/shoot.wav'),
     state, gameTimer, targetSpawnTimer,
     targets, animations,
     reticle, scorebar, time, gun, score;
@@ -417,6 +420,12 @@ function getShootAnimationFrames() {
     frames.push(PIXI.Texture.fromImage('images/shootAnim' + i + '.png'));
   }
   return frames;
+}
+
+function getShootSoundEffect() {
+  let soundEffect = new Audio(shootSoundEffect.src);
+  soundEffect.volume = SHOOT_SOUND_EFFECT_VOLUME;
+  return soundEffect;
 }
 
 /* socket ============================================================================== */
