@@ -413,9 +413,11 @@ function keydownHandler(e) {
     if(state == play) {
       pauseText = new PauseText();
       stage.addChild(pauseText);
+      document.body.className = 'paused';
       state = pause;
     } else if(state == pause) {
       pauseText.destroy();
+      document.body.className = '';
       state = play;
     }
   }

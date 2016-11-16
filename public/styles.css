@@ -13,3 +13,7 @@ body {
   from { background-position: 0 0, 0 0; }
   to { background-position: -640px 0, 0 0; }
 }
+
+.paused {
+  animation-play-state: paused;
+}
